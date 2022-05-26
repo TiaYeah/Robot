@@ -34,20 +34,16 @@ namespace Computer_Graphics2
 
         private readonly uint[] floorIndices =
         {
-            0, 1, 3,   // first triangle
+            0, 1, 3,   
             1, 2, 3
         };
 
-        Camera camera;
 
-        uint[] indices, sideIndices;
-        float[] vertices, sideVertices;
+        uint[] indices;
+        float[] vertices;
         double Time;
-        int Side = 1;
-        const double Degrees = 40;
-        int indicesLength = 0;
 
-        Texture DiffuseHead, SpecularHead, difFloor, specFloor, difRobotSide, specRobotSide;
+        Texture difRobot, specRobot, difFloor, specFloor;
 
         Shader robotShader, floorShader;
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings): base(gameWindowSettings, nativeWindowSettings)
@@ -84,8 +80,8 @@ namespace Computer_Graphics2
             base.OnLoad();
             GL.ClearColor(Color4.LightBlue);
             GL.Enable(EnableCap.DepthTest);
-            Cylinder robot = new Cylinder(0.0f, 0.0f, 0.5f, 0.5f, 0.25f, 1);
-            Cylinder robotSide = new Cylinder(0.0f, 0.0f, 0.5f, 0.5f, 0.25f, 1);
+            Cylinder robot = new Cylinder(0.0f, 0.0f, 0.5f, 0.7f, 0.25f, 1);
+            Cylinder floor = new Cylinder(0.0f, 0.0f, 0.5f, 4.0f, 0.001f, 1);
 
             
 
@@ -95,8 +91,8 @@ namespace Computer_Graphics2
             floorShader = new Shader(@"D:\Projects\Computer_Graphics2\Computer_Graphics2\data\Shaders\shader_base.vert", @"D:\Projects\Computer_Graphics2\Computer_Graphics2\data\Shaders\lightning.frag");
             DefineShader(floorShader, 0);
 
-            Matrix4 view = Matrix4.CreateTranslation(0.0f, -0.25f, -3.0f);
-            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), 800 / 800, 0.1f, 100.0f);
+            Matrix4 view = Matrix4.CreateTranslation(0.0f, -0.75f, -3.5f);
+            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), 800 / 550, 0.1f, 10.0f);
             robotShader.SetMatrix4("view", view);
             robotShader.SetMatrix4("projection", projection);
 
@@ -108,23 +104,21 @@ namespace Computer_Graphics2
             //robotShader.SetMatrix4("view", view);
             //robotShader.SetMatrix4("projection", projection);
 
-            DiffuseHead = Texture.LoadFromFile("../../../Resources/robot.jpg");
-            SpecularHead = Texture.LoadFromFile("../../../Resources/SpecularMap.png");
-            difFloor = Texture.LoadFromFile("../../../Resources/floor2.jpg");
-            specFloor = Texture.LoadFromFile("../../../Resources/floor2specular.png");
-            //difRobotSide = Texture.LoadFromFile("../../../Resources/robotSide.jpg");
-            //specRobotSide = Texture.LoadFromFile("../../../Resources/robotSideSpecular.png");
+            difRobot = Texture.LoadFromFile("../../../Resources/robot.jpg");
+            specRobot = Texture.LoadFromFile("../../../Resources/robotSpecular.png");
+            difFloor = Texture.LoadFromFile("../../../Resources/floor3.jpg");
+            specFloor = Texture.LoadFromFile("../../../Resources/floor3specular.png");
 
-            ObjectRenderList.Add(new ObjectRender(robotSide.GetAllTogether(), robotSide.GetIndices(), floorShader, difFloor, specFloor, 0));
+            ObjectRenderList.Add(new ObjectRender(floor.GetAllTogether(), floor.GetIndices(), floorShader, difFloor, specFloor, 0));
             
             //robot.buildTopVerices();
             indices = robot.GetIndices();
             vertices = robot.GetAllTogether();
 
-            ObjectRenderList.Add(new ObjectRender(vertices, indices, robotShader, DiffuseHead, SpecularHead, 1));
+            ObjectRenderList.Add(new ObjectRender(vertices, indices, robotShader, difRobot, specRobot, 1));
 
-            //indices = robotSide.GetIndices();
-            //vertices = robotSide.GetAllTogether();
+            //indices = floor.GetIndices();
+            //vertices = floor.GetAllTogether();
             //ObjectRenderList.Add(new ObjectRender(vertices, indices, robotShader, difRobotSide, specRobotSide, 1));
             //sideVertices = robot.getSideVertices();
             //indices = robot.GetIndices();
@@ -209,7 +203,7 @@ namespace Computer_Graphics2
                 {
                     var RotationMatrixYrad = Matrix4.CreateRotationY(0.01f * (float)Time);
                     var RotationMatrixHorizontal = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(90));
-                    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, 0.75f, 0.0f);
+                    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, 0.85f, 0.0f);
                     var ScaleMatrix = Matrix4.CreateScale(0.5f);
 
                     //var model = Matrix4.Identity * RotationMatrixZ * TranslationMatrix * RotationMatrixY;
@@ -223,9 +217,8 @@ namespace Computer_Graphics2
                 }
                 else
                 {
-                    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, -0.50f, -1.25f);
-                    var RotationMatrixYrad = Matrix4.CreateRotationY(0.01f * (float)Time);
-                    var ScaleMatrix = Matrix4.CreateScale(2.0f);
+                    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, -0.5f, -2.7f);
+                    var ScaleMatrix = Matrix4.CreateScale(1.0f);
                     var RotationMatrixHorizontal = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(90));
                     var model = Matrix4.Identity * ScaleMatrix * RotationMatrixHorizontal * TranslationMatrix;
                     Obj.Bind();
@@ -241,8 +234,8 @@ namespace Computer_Graphics2
             //    GL.BindVertexArray(vertexArrayObject);
 
             //    ShaderAttribute();
-            //    DiffuseHead.Use(TextureUnit.Texture0);
-            //    SpecularHead.Use(TextureUnit.Texture1);
+            //    difRobot.Use(TextureUnit.Texture0);
+            //    specRobot.Use(TextureUnit.Texture1);
 
             //    var RotationMatrixYrad = Matrix4.CreateRotationY(0.01f * (float)Time);
             //    var RotationMatrixHorizontal = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(90));
