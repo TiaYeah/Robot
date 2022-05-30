@@ -14,11 +14,10 @@ namespace Computer_Graphics2
         {
             NativeWindowSettings nSettings = new NativeWindowSettings()
             {
-                Size = new Vector2i(800, 600),
-                Title = "LearnOpenTK - Creating a Window",
+                Size = new Vector2i(1000, 800),
+                Title = "Robot Window",
                 WindowState = WindowState.Normal,
                 Flags = ContextFlags.Default,
-                Profile = ContextProfile.Compatability
             };
             using (var game = new Game(GameWindowSettings.Default, nSettings))
             {

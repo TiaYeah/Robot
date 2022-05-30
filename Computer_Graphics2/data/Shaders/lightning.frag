@@ -4,6 +4,7 @@ struct Material {
     sampler2D specular;
     float     shininess;
 };
+
 //This light structure is pretty much the same as the one from the last few parts of the tutorials
 struct Light {
     vec3 position;

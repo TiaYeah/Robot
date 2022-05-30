@@ -9,6 +9,7 @@ using OpenTK.Windowing.Desktop;
 using Computer_Graphics2.Common;
 using Computer_Graphics2.Render;
 using OpenTK.Graphics.OpenGL4;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 
 namespace Computer_Graphics2
@@ -16,28 +17,9 @@ namespace Computer_Graphics2
 
     public class Game : GameWindow
     {
-        public int vertexBufferObject;
-        public int vertexArrayObject;
-        public int elementBufferObject;
-        Vector3 LightPos = new Vector3(0.0f, 2.6f, 0.0f);
+        Vector3 LightPos = new Vector3(0.0f, 3.0f, 0.0f);
         List<ObjectRender> ObjectRenderList = new List<ObjectRender>();
-
-
-        private readonly float[] floorVertices =
-        {
-            // Position                          Texture coordinates
-            1.0f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-            1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-           -1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-           -1.0f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
-        };
-
-        private readonly uint[] floorIndices =
-        {
-            0, 1, 3,   
-            1, 2, 3
-        };
-
+        Camera _camera;
 
         uint[] indices;
         float[] vertices;
@@ -45,24 +27,122 @@ namespace Computer_Graphics2
 
         Texture difRobot, specRobot, difFloor, specFloor;
 
-        Shader robotShader, floorShader;
+        Shader Shader;
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings): base(gameWindowSettings, nativeWindowSettings)
         {
         }
 
-        private void DefineShader(Shader Shader, int flag)
+        protected override void OnLoad()
         {
-            if (flag == 1)
+            base.OnLoad();
+            GL.ClearColor(Color4.LightBlue);
+            GL.Enable(EnableCap.DepthTest);
+
+            Cylinder robot = new Cylinder(0.0f, 0.0f, 0.5f, 0.7f, 0.25f);
+            Cylinder floor = new Cylinder(0.0f, 0.0f, -0.150f, 4.0f, 0.001f);
+
+            Shader = new Shader(@"D:\Projects\Computer_Graphics2\Computer_Graphics2\data\Shaders\shader_base.vert", @"D:\Projects\Computer_Graphics2\Computer_Graphics2\data\Shaders\lightning.frag");
+            DefineShader(Shader);
+
+            difRobot = Texture.LoadFromFile("../../../Resources/robot.jpg");
+            specRobot = Texture.LoadFromFile("../../../Resources/robotSpecular.png");
+            difFloor = Texture.LoadFromFile("../../../Resources/floor3.jpg");
+            specFloor = Texture.LoadFromFile("../../../Resources/floor3specular.png");
+
+            ObjectRenderList.Add(new ObjectRender(floor.GetAllTogether(), floor.GetIndices(), Shader, difFloor, specFloor, 0)); // пол
+            
+            indices = robot.GetIndices();
+            vertices = robot.GetAllTogether();
+
+            ObjectRenderList.Add(new ObjectRender(vertices, indices, Shader, difRobot, specRobot, 1)); // робот
+            _camera = new Camera(new Vector3(0.0f,1.0f,4.0f), Size.X / (float)Size.Y);
+        }
+
+        protected override void OnResize(ResizeEventArgs e)
+        {
+            base.OnResize(e);
+        }
+
+        protected override void OnUpdateFrame(FrameEventArgs args)
+        {
+            base.OnUpdateFrame(args);
+
+            var input = KeyboardState;
+
+            if (input.IsKeyDown(Keys.Escape))
             {
-                Shader.SetInt("material.diffuse", 0);
-                Shader.SetInt("material.specular", 1);
+                Close();
             }
-            else
+
+            const float cameraSpeed = 1.5f;
+
+            if (input.IsKeyDown(Keys.W))
             {
-                Shader.SetInt("material.diffuse", 2);
-                Shader.SetInt("material.specular", 3);
+                _camera.Position += _camera.Front * cameraSpeed * (float)args.Time; // Forward
             }
-            //Shader.SetVector3("material.specular", new Vector3(0.5f, 0.5f, 0.5f));
+
+            if (input.IsKeyDown(Keys.S))
+            {
+                _camera.Position -= _camera.Front * cameraSpeed * (float)args.Time; // Backwards
+            }
+            if (input.IsKeyDown(Keys.A))
+            {
+                _camera.Position -= _camera.Right * cameraSpeed * (float)args.Time; // Left
+            }
+            if (input.IsKeyDown(Keys.D))
+            {
+                _camera.Position += _camera.Right * cameraSpeed * (float)args.Time; // Right
+            }
+            if (input.IsKeyDown(Keys.Space))
+            {
+                _camera.Position += _camera.Up * cameraSpeed * (float)args.Time; // Up
+            }
+            if (input.IsKeyDown(Keys.LeftShift))
+            {
+                _camera.Position -= _camera.Up * cameraSpeed * (float)args.Time; // Down
+            }
+        }
+
+        protected override void OnRenderFrame(FrameEventArgs args)
+        {
+            base.OnRenderFrame(args);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            Time += 35.0 * args.Time;
+            Shader.SetMatrix4("view", _camera.GetViewMatrix());
+            Shader.SetMatrix4("projection", _camera.GetProjectionMatrix());
+
+            foreach (var Obj in ObjectRenderList)
+            {
+                if (Obj.getFlag() == 1)
+                {
+                    var RotationMatrixYrad = Matrix4.CreateRotationY(0.01f * (float)Time);
+                    var RotationMatrixHorizontal = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(90));
+                    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, 1.5f, 0.0f);
+                    var ScaleMatrix = Matrix4.CreateScale(0.5f);
+                    var model = ScaleMatrix * Matrix4.Identity * TranslationMatrix * RotationMatrixHorizontal * RotationMatrixYrad;
+                    Obj.ApplyTexture();
+                    Obj.UpdateShaderModel(model);
+                    Obj.setShaderAttribute();
+                    Obj.Render();
+                }
+                else
+                {
+                    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, -0.5f, -1.25f);
+                    var ScaleMatrix = Matrix4.CreateScale(1.0f);
+                    var RotationMatrixHorizontal = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(90));
+                    var model = Matrix4.Identity * ScaleMatrix * RotationMatrixHorizontal * TranslationMatrix;
+                    Obj.ApplyTexture();
+                    Obj.UpdateShaderModel(model);
+                    Obj.setShaderAttribute();
+                    Obj.Render();
+                }
+            }
+            SwapBuffers();
+        }
+        private void DefineShader(Shader Shader)
+        {
+            Shader.SetInt("material.diffuse", 0);
+            Shader.SetInt("material.specular", 1);
             Shader.SetFloat("material.shininess", 10.0f);
             Shader.SetVector3("light.position", LightPos);
             Shader.SetFloat("light.constant", 0.1f);
@@ -74,189 +154,6 @@ namespace Computer_Graphics2
             Shader.Use();
         }
 
-       
-        protected override void OnLoad()
-        {
-            base.OnLoad();
-            GL.ClearColor(Color4.LightBlue);
-            GL.Enable(EnableCap.DepthTest);
-            Cylinder robot = new Cylinder(0.0f, 0.0f, 0.5f, 0.7f, 0.25f, 1);
-            Cylinder floor = new Cylinder(0.0f, 0.0f, 0.5f, 4.0f, 0.001f, 1);
-
-            
-
-
-            robotShader = new Shader(@"D:\Projects\Computer_Graphics2\Computer_Graphics2\data\Shaders\shader_base.vert", @"D:\Projects\Computer_Graphics2\Computer_Graphics2\data\Shaders\lightning.frag");
-            DefineShader(robotShader,1);
-            floorShader = new Shader(@"D:\Projects\Computer_Graphics2\Computer_Graphics2\data\Shaders\shader_base.vert", @"D:\Projects\Computer_Graphics2\Computer_Graphics2\data\Shaders\lightning.frag");
-            DefineShader(floorShader, 0);
-
-            Matrix4 view = Matrix4.CreateTranslation(0.0f, -0.75f, -3.5f);
-            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), 800 / 550, 0.1f, 10.0f);
-            robotShader.SetMatrix4("view", view);
-            robotShader.SetMatrix4("projection", projection);
-
-            floorShader.SetMatrix4("view", view);
-            floorShader.SetMatrix4("projection", projection);
-
-            //Matrix4 view = Matrix4.CreateTranslation(0.0f, -0.15f, -3.0f);
-            //Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), 800 / 800, 0.1f, 100.0f);
-            //robotShader.SetMatrix4("view", view);
-            //robotShader.SetMatrix4("projection", projection);
-
-            difRobot = Texture.LoadFromFile("../../../Resources/robot.jpg");
-            specRobot = Texture.LoadFromFile("../../../Resources/robotSpecular.png");
-            difFloor = Texture.LoadFromFile("../../../Resources/floor3.jpg");
-            specFloor = Texture.LoadFromFile("../../../Resources/floor3specular.png");
-
-            ObjectRenderList.Add(new ObjectRender(floor.GetAllTogether(), floor.GetIndices(), floorShader, difFloor, specFloor, 0));
-            
-            //robot.buildTopVerices();
-            indices = robot.GetIndices();
-            vertices = robot.GetAllTogether();
-
-            ObjectRenderList.Add(new ObjectRender(vertices, indices, robotShader, difRobot, specRobot, 1));
-
-            //indices = floor.GetIndices();
-            //vertices = floor.GetAllTogether();
-            //ObjectRenderList.Add(new ObjectRender(vertices, indices, robotShader, difRobotSide, specRobotSide, 1));
-            //sideVertices = robot.getSideVertices();
-            //indices = robot.GetIndices();
-            //indicesLength = indices.Length;
-
-            //ObjectRenderList.Add(new ObjectRender(sideVertices, indices, robotShader, difRobotSide, specRobotSide, 1));
-            //ObjectRenderList.Add(new ObjectRender(vertices, indices, robotShader, difRobotSide, specRobotSide, 1));
-
-            //
-            //Cylinder robot = new Cylinder(0.0f, 0.0f, 0.5f, 0.5f, 0.25f, 1);
-            //GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            //GL.BindVertexArray(vertexArrayObject);
-            //indices = robot.GetIndices();
-            //vertices = robot.GetAllTogether();
-            //GL.NamedBufferStorage(
-            //  vertexBufferObject,
-            //  vertices.Length * sizeof(float),        // the size needed by this buffer
-            //  vertices,                           // data to initialize with
-            //  BufferStorageFlags.MapWriteBit);
-            //GL.EnableVertexArrayAttrib(vertexArrayObject, 0);
-            //GL.VertexArrayVertexBuffer(vertexArrayObject, 0, vertexArrayObject, IntPtr.Zero, 8 * sizeof(float));
-            //GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
-            //GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.DynamicDraw);
-            //
-
-        }
-
-        public void ShaderAttribute(Shader shader)
-        {
-
-            var positionLocation = shader.GetAttribLocation("aPos​");
-            GL.EnableVertexAttribArray(positionLocation);
-            GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
-
-            var normalLocation = shader.GetAttribLocation("aNormal");
-            GL.EnableVertexAttribArray(normalLocation);
-            GL.VertexAttribPointer(normalLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
-
-            var texCoordLocation = shader.GetAttribLocation("aTexCoords");
-            GL.EnableVertexAttribArray(texCoordLocation);
-            GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 6 * sizeof(float));
-
-        }
-        protected override void OnResize(ResizeEventArgs e)
-        {
-            base.OnResize(e);
-        }
-
-        protected override void OnUpdateFrame(FrameEventArgs args)
-        {
-            base.OnUpdateFrame(args);
-        }
-
-        
-
-        
-
-        protected override void OnRenderFrame(FrameEventArgs args)
-        {
-            base.OnRenderFrame(args);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            Time += 35.0 * args.Time;
-
-            // if (Math.Abs(Time) > Degrees) Side *= -1;
-            //var RotationMatrixZ = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(Time));
-
-            //Time += 15 * args.Time;
-
-            //var RotationMatrix = Matrix4.CreateRotationY(0.4f * (float)Time) *
-            //                     Matrix4.CreateRotationZ(0.15f * (float)Time) *
-            //                     Matrix4.CreateRotationX((float)-10.0f) *
-            //Matrix4.CreateTranslation(0.0f, 0.0f, -2.5f) * Matrix4.CreatePerspectiveFieldOfView(
-            //   0.6f, 900 / 900, 1.0f, 10.0f);
-
-            //var model = Matrix4.Identity * RotationMatrix * ScaleMatrix;
-            //robotShader.SetMatrix4("viewPos", camera.GetViewMatrix());
-            //robotShader.SetMatrix4("projection", camera.GetProjectionMatrix());
-
-            foreach (var Obj in ObjectRenderList)
-            {
-                if (Obj.getFlag() == 1)
-                {
-                    var RotationMatrixYrad = Matrix4.CreateRotationY(0.01f * (float)Time);
-                    var RotationMatrixHorizontal = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(90));
-                    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, 0.85f, 0.0f);
-                    var ScaleMatrix = Matrix4.CreateScale(0.5f);
-
-                    //var model = Matrix4.Identity * RotationMatrixZ * TranslationMatrix * RotationMatrixY;
-                    var model = ScaleMatrix * Matrix4.Identity * TranslationMatrix * RotationMatrixHorizontal * RotationMatrixYrad;
-                    Obj.Bind();
-                    Obj.ApplyTexture();
-                    Obj.UpdateShaderModel(model);
-                    Obj.ShaderAttribute();
-                    Obj.useShader();
-                    Obj.Render();
-                }
-                else
-                {
-                    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, -0.5f, -2.7f);
-                    var ScaleMatrix = Matrix4.CreateScale(1.0f);
-                    var RotationMatrixHorizontal = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(90));
-                    var model = Matrix4.Identity * ScaleMatrix * RotationMatrixHorizontal * TranslationMatrix;
-                    Obj.Bind();
-                    Obj.ApplyTexture();
-                    Obj.UpdateShaderModel(model);
-                    Obj.ShaderAttribute();
-                    Obj.useShader();
-                    Obj.Render();
-                }
-            }
-
-            //{
-            //    GL.BindVertexArray(vertexArrayObject);
-
-            //    ShaderAttribute();
-            //    difRobot.Use(TextureUnit.Texture0);
-            //    specRobot.Use(TextureUnit.Texture1);
-
-            //    var RotationMatrixYrad = Matrix4.CreateRotationY(0.01f * (float)Time);
-            //    var RotationMatrixHorizontal = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(90));
-            //    var TranslationMatrix = Matrix4.CreateTranslation(0.0f, 0.75f, 0.0f);
-            //    var ScaleMatrix = Matrix4.CreateScale(0.5f);
-
-            //    //var model = Matrix4.Identity * RotationMatrixZ * TranslationMatrix * RotationMatrixY;
-            //    var model = ScaleMatrix * Matrix4.Identity * TranslationMatrix * RotationMatrixHorizontal * RotationMatrixYrad;
-            //    robotShader.SetMatrix4("model", model);
-            //    //_shader.SetMatrix4("view", _camera.GetViewMatrix());
-            //    //_shader.SetMatrix4("projection", _camera.GetProjectionMatrix());
-            //    //_shader.SetVector3("viewPos", _camera.Position);
-            //    //_shader.Use();
-            //    Matrix4 view = Matrix4.CreateTranslation(0.0f, -0.25f, -3.0f);
-            //    Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), 800 / 800, 0.1f, 100.0f);
-            //    robotShader.SetMatrix4("view", view);
-            //    robotShader.SetMatrix4("projection", projection);
-            //    GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
-            //}
-            SwapBuffers();
-        }
 
         protected override void OnUnload()
         {

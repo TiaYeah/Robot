@@ -27,7 +27,6 @@ D:\Projects\Computer_Graphics2\Computer_Graphics2\obj\Debug\net5.0\Computer_Grap
 D:\Projects\Computer_Graphics2\Computer_Graphics2\obj\Debug\net5.0\ref\Computer_Graphics2.dll
 D:\Projects\Computer_Graphics2\Computer_Graphics2\obj\Debug\net5.0\Computer_Graphics2.pdb
 D:\Projects\Computer_Graphics2\Computer_Graphics2\obj\Debug\net5.0\Computer_Graphics2.genruntimeconfig.cache
-D:\Projects\Computer_Graphics2\Computer_Graphics2\bin\Debug\net5.0\data\Shaders\shader_base.frag
 D:\Projects\Computer_Graphics2\Computer_Graphics2\bin\Debug\net5.0\data\Shaders\shader_base.vert
 D:\Projects\Computer_Graphics2\Computer_Graphics2\bin\Debug\net5.0\Microsoft.Win32.SystemEvents.dll
 D:\Projects\Computer_Graphics2\Computer_Graphics2\bin\Debug\net5.0\System.Drawing.Common.dll

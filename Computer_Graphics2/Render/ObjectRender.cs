@@ -23,23 +23,19 @@ namespace Computer_Graphics2.Render
 
 
 
-        public ObjectRender(float[] Vertices, uint[] Indices, Shader shader, Texture dff, Texture spcl, int _flag)
+        public ObjectRender(float[] Vertices, uint[] Indices, Shader shader, Texture diff, Texture spec, int _flag)
         {
             IndicesLenght = Indices.Length;
             this.Shader = shader;
-            this.Diffuse = dff;
-            this.Specular = spcl;
+            this.Diffuse = diff;
+            this.Specular = spec;
             this.flag = _flag;
             this.Bind();
-            this.ShaderAttribute();
+            this.setShaderAttribute();
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
 
-            GL.NamedBufferStorage(
-               VertexBufferObject,
-               Vertices.Length * sizeof(float),        // the size needed by this buffer
-               Vertices,                           // data to initialize with
-               BufferStorageFlags.MapWriteBit);    // at this point we will only write to the buffer
+            GL.NamedBufferStorage(VertexBufferObject, Vertices.Length * sizeof(float), Vertices, BufferStorageFlags.MapWriteBit);    
 
             GL.EnableVertexArrayAttrib(VertexArrayObject, 0);
 
@@ -48,8 +44,6 @@ namespace Computer_Graphics2.Render
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, Indices.Length * sizeof(uint), Indices, BufferUsageHint.DynamicDraw);
         }
-
-        
 
         public void Bind()
         {
@@ -62,7 +56,7 @@ namespace Computer_Graphics2.Render
             
         }
 
-        public void ShaderAttribute()
+        public void setShaderAttribute()
         {
             this.Bind();
 
@@ -82,16 +76,8 @@ namespace Computer_Graphics2.Render
 
         public void ApplyTexture()
         {
-            if (flag == 1)
-            {
-                Diffuse.Use(TextureUnit.Texture0);
-                Specular.Use(TextureUnit.Texture1);
-            } else
-            {
-                Diffuse.Use(TextureUnit.Texture2);
-                Specular.Use(TextureUnit.Texture3);
-            }
-
+            Diffuse.Use(TextureUnit.Texture0);
+            Specular.Use(TextureUnit.Texture1);
         }
          
         public void UpdateShaderModel(Matrix4 model)

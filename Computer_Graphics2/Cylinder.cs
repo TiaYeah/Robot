@@ -15,89 +15,25 @@ namespace Computer_Graphics2
         public List<uint> Indices = new List<uint>();
         public List<int> lineIndices = new List<int>();
 
-        public float baseRadius, height; //радиус цилиндра и его высота
-        public int sectorCount, stackCount; //количество секторов и стаков для отрисовки фигуры
+        public float baseRadius, height;
+        public int sectorCount;
 
-        private int baseCenterIndex; //индекс вершин для верх и нижн граней
+        private int baseCenterIndex;
         private int topCenterIndex;
 
-        float x, y, z; //координаты положения фигуры
-        int type;
+        float x, y, z; 
 
-        //конструктор класса
-        public Cylinder(float x, float y, float z, float baseRadius, float height, int type, int sectorCount = 100, int stackCount = 100)//18,36
+        public Cylinder(float x, float y, float z, float baseRadius, float height, int sectorCount = 100)
         {
             this.baseRadius = baseRadius;
             this.height = height;
             this.sectorCount = sectorCount;
-            this.stackCount = stackCount;
             this.x = x;
             this.y = y;
             this.z = z;
-            this.type = type;
-            this.buildVerticesSmooth();
+            this.buildVertices();
         }
 
-        //public void buildTopVerices()
-        //{
-        //    Vertecies.Clear();
-        //    Normals.Clear();
-        //    TexCoords.Clear();
-        //    List<float> unitVertices = getUnitCircleVertices();
-        //    for (int i = 0; i < 1; ++i)
-        //    {
-        //        float h = -height / 2.0f + i * height;           // z value; -h/2 to h/2
-        //        float t = 1.0f - i;                              // vertical tex coord; 1 to 0
-
-        //        for (int j = 0, k = 0; j <= sectorCount; ++j, k += 3)
-        //        {
-        //            float ux = unitVertices[k];
-        //            float uy = unitVertices[k + 1];
-        //            float uz = unitVertices[k + 2];
-        //            // position vector
-        //            Vertecies.Add(ux * baseRadius + x);             // vx
-        //            Vertecies.Add(uy * baseRadius + y);             // vy
-        //            Vertecies.Add(h + z);                       // vz
-        //                                                        // normal vector
-        //            Normals.Add(ux);                       // nx
-        //            Normals.Add(uy);                       // ny
-        //            Normals.Add(uz);                       // nz
-        //                                                   // texture coordinate
-        //            TexCoords.Add((float)j / sectorCount); // s
-        //            TexCoords.Add(t);                      // t
-        //        }
-        //    }
-        //    baseCenterIndex = (int)Vertecies.Count / 3;
-        //    topCenterIndex = baseCenterIndex + sectorCount + 1;
-        //    for (int i = 0; i < 2; ++i)
-        //    {
-        //        float h = -height / 2.0f + i * height;           // z value; -h/2 to h/2
-        //        float nz = -1 + i * 2;                           // z value of normal; -1 to 1
-
-        //        // center point
-        //        Vertecies.Add(0 + x); Vertecies.Add(0 + y); Vertecies.Add(h + z);
-        //        Normals.Add(0); Normals.Add(0); Normals.Add(nz);
-        //        TexCoords.Add(0.5f); TexCoords.Add(0.5f);
-
-        //        for (int j = 0, k = 0; j < sectorCount; ++j, k += 3)
-        //        {
-        //            float ux = unitVertices[k];
-        //            float uy = unitVertices[k + 1];
-        //            // position vector
-        //            Vertecies.Add(ux * baseRadius + x);             // vx
-        //            Vertecies.Add(uy * baseRadius + y);             // vy
-        //            Vertecies.Add(h + z);                       // vz
-        //                                                        // normal vector
-        //            Normals.Add(0);                        // nx
-        //            Normals.Add(0);                        // ny
-        //            Normals.Add(nz);                       // nz
-        //                                                   // texture coordinate
-        //            TexCoords.Add(-ux * 0.5f + 0.5f);      // s
-        //            TexCoords.Add(-uy * 0.5f + 0.5f);      // t
-        //        }
-        //    }
-        //}
-        //Создаются вертексы (точки) для окружностей цилиндра
         public List<float> getUnitCircleVertices()
         {
             const float PI = 3.1415926f;
@@ -115,84 +51,34 @@ namespace Computer_Graphics2
             return unitCircleVertices;
         }
 
-        public float[] getUnitCircleVertices2()
-        {
-            const float PI = 3.1415926f;
-            float sectorStep = 2 * PI / sectorCount;
-            float sectorAngle;  // radian
-
-            List<float> unitCircleVertices = new List<float>();
-            for (int i = 0; i <= sectorCount; ++i)
-            {
-                sectorAngle = i * sectorStep;
-                unitCircleVertices.Add((float)Math.Cos(sectorAngle)); // x
-                unitCircleVertices.Add((float)Math.Sin(sectorAngle)); // y
-                unitCircleVertices.Add(0);                // z
-            }
-            return unitCircleVertices.ToArray();
-        }
-
-        //Создаются все вертексы для фигуры (а так ж нормали и текстурные координаты для них)
-        public void buildVerticesSmooth()
+        public void buildVertices()
         {
             List<float> unitVertices = getUnitCircleVertices();
-            if (type == 1)
+            for (int i = 0; i < 2; ++i)
             {
-                for (int i = 0; i < 2; ++i)
-                {
-                    float h = -height / 2.0f + i * height;           // z value; -h/2 to h/2
-                    float t = 1.0f - i;                              // vertical tex coord; 1 to 0
+                float h = -height / 2.0f + i * height;           // z value; -h/2 to h/2
 
-                    for (int j = 0, k = 0; j <= sectorCount; ++j, k += 3)
-                    {
-                        float ux = unitVertices[k];
-                        float uy = unitVertices[k + 1];
-                        float uz = unitVertices[k + 2];
-                        // position vector
-                        Vertecies.Add(ux * baseRadius + x);             // vx
-                        Vertecies.Add(uy * baseRadius + y);             // vy
-                        Vertecies.Add(h + z);                       // vz
-                                                                    // normal vector
-                        Normals.Add(ux);                       // nx
-                        Normals.Add(uy);                       // ny
-                        Normals.Add(uz);                       // nz
-                                                               // texture coordinate
-                        TexCoords.Add((float)j / sectorCount); // s
-                        TexCoords.Add(1);                      // t
-                    }
-                }
-                baseCenterIndex = (int)Vertecies.Count / 3;
-                topCenterIndex = baseCenterIndex + sectorCount + 1; // include center vertex
-            } 
-            else
-            {
-                for (int i = 0; i < 1; ++i)
+                for (int j = 0, k = 0; j <= sectorCount; ++j, k += 3)
                 {
-                    float h = -height / 2.0f + i * height;           // z value; -h/2 to h/2
-                    float t = 1.0f - i;                              // vertical tex coord; 1 to 0
+                    float ux = unitVertices[k];
+                    float uy = unitVertices[k + 1];
+                    float uz = unitVertices[k + 2];
 
-                    for (int j = 0, k = 0; j <= sectorCount; ++j, k += 3)
-                    {
-                        float ux = unitVertices[k];
-                        float uy = unitVertices[k + 1];
-                        float uz = unitVertices[k + 2];
-                        // position vector
-                        Vertecies.Add(ux * baseRadius + x);             // vx
-                        Vertecies.Add(uy * baseRadius + y);             // vy
-                        Vertecies.Add(h + z);                       // vz
-                                                                    // normal vector
-                        Normals.Add(ux);                       // nx
-                        Normals.Add(uy);                       // ny
-                        Normals.Add(uz);                       // nz
-                                                               // texture coordinate
-                        TexCoords.Add((float)j / sectorCount); // s
-                        TexCoords.Add(t);                      // t
-                    }
+                    Vertecies.Add(ux * baseRadius + x);             // vx
+                    Vertecies.Add(uy * baseRadius + y);             // vy
+                    Vertecies.Add(h + z);                       // vz
+                                                                // normal vector
+                    Normals.Add(ux);                       // nx
+                    Normals.Add(uy);                       // ny
+                    Normals.Add(uz);                       // nz
+                                                           // texture coordinate
+                    TexCoords.Add(1); //(float)j / sectorCount
+                    TexCoords.Add(1);                      
                 }
-                baseCenterIndex = (int)Vertecies.Count / 3;
-                topCenterIndex = baseCenterIndex + sectorCount + 1;
             }
-
+            baseCenterIndex = (int)Vertecies.Count / 3;
+            topCenterIndex = baseCenterIndex + sectorCount + 1;// include center vertex
+           
             // put base and top vertices to arrays
             for (int i = 0; i < 2; ++i)
             {
@@ -208,7 +94,7 @@ namespace Computer_Graphics2
                 {
                     float ux = unitVertices[k];
                     float uy = unitVertices[k + 1];
-                    // position vector
+
                     Vertecies.Add(ux * baseRadius + x);             // vx
                     Vertecies.Add(uy * baseRadius + y);             // vy
                     Vertecies.Add(h + z);                       // vz
@@ -217,25 +103,12 @@ namespace Computer_Graphics2
                     Normals.Add(0);                        // ny
                     Normals.Add(nz);                       // nz
                                                            // texture coordinate
-                    TexCoords.Add(-ux * 0.5f + 0.5f);      // s
-                    TexCoords.Add(-uy * 0.5f + 0.5f);      // t
+                    TexCoords.Add(-ux * 0.5f + 0.5f);      
+                    TexCoords.Add(-uy * 0.5f + 0.5f);
                 }
             }
         }
 
-
-        public float[] GetNormals()
-        {
-            return Normals.ToArray();
-        }
-
-        public float[] GetVertecies()
-        {
-            return Vertecies.ToArray();
-        }
-
-
-        //Создаются и возвращаются индексы
         public uint[] GetIndices()
         {
             int k1 = 0;
@@ -244,20 +117,15 @@ namespace Computer_Graphics2
             for (int i = 0; i < sectorCount; ++i, ++k1, ++k2)
             {
                 // 2 triangles per sector
-                // k1 => k1+1 => k2
                 Indices.Add(Convert.ToUInt32(k1));
                 Indices.Add(Convert.ToUInt32(k1 + 1));
                 Indices.Add(Convert.ToUInt32(k2));
                 
-                // k2 => k1+1 => k2+1
                 Indices.Add(Convert.ToUInt32(k2));
                 Indices.Add(Convert.ToUInt32(k1 + 1));
                 Indices.Add(Convert.ToUInt32(k2 + 1));
             }
 
-            // Indices for the base surface
-            //NOTE: baseCenterIndex and topCenterIndices are pre-computed during vertex generation
-            //      please see the previous code snippet
             for (int i = 0, k = baseCenterIndex + 1; i < sectorCount; ++i, ++k)
             {
                 if (i < sectorCount - 1)
